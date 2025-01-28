@@ -4,7 +4,13 @@ const Participant = require("../models/Participant");
 const sequelize = require("./database");
 
 // Define associations
-// Meeting.belongsToMany(Participant, { through: Participant });
+Meeting.hasMany(Participant, {
+	foreignKey: 'meeting',
+});
+Participant.belongsTo(Meeting, {
+	foreignKey: 'meeting',
+});
+  
 
 // Sync all models that are not yet in the database
 sequelize

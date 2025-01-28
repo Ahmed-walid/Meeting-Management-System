@@ -1,12 +1,25 @@
-import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
-import { MeetingCard } from '../components/MeetingCard';
-import { MeetingForm } from '../components/MeetingForm';
-import { useMeetingSound } from '../hooks/useSound';
-import { useMeetingStore } from '../store/meetingStore';
-import type { Meeting } from '../types';
+import React, { useState } from "react";
+import { Plus } from "lucide-react";
+import { MeetingCard } from "../components/MeetingCard";
+import { MeetingForm } from "../components/MeetingForm";
+import { useMeetingSound } from "../hooks/useSound";
+import { useMeetingStore } from "../store/meetingStore";
+import type { Meeting } from "../types";
+import { useEffect } from "react";
 
 export default function TodayMeetings() {
+  type MeetingsState = {
+    expected: Meeting[];
+    waiting: Meeting[];
+    running: Meeting[];
+  };
+
+  const [meetings, setMeetings] = useState<MeetingsState>({
+    expected: [],
+    waiting: [],
+    running: [],
+  });
+
   const [showForm, setShowForm] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | undefined>();
   const { playMoveSound, playAddSound } = useMeetingSound();
@@ -16,52 +29,73 @@ export default function TodayMeetings() {
     updateMeeting,
     deleteMeeting,
     updateMeetingStatus,
-    getTodayMeetings
+    getTodayMeetings,
+    loadMeetings,
   } = useMeetingStore();
 
-  const handleAddMeeting = (meetingData: Omit<Meeting, 'id' | 'status'>) => {
+  useEffect(() => {
+    const fetchMeetings = async () => {
+      await loadMeetings();
+      updateMeetings();
+    };
+
+    fetchMeetings();
+  }, []);
+
+  const updateMeetings = () => {
+    setMeetings({
+      expected: getTodayMeetings("Expected"),
+      waiting: getTodayMeetings("Waiting"),
+      running: getTodayMeetings("Running"),
+    });
+  };
+
+  const handleAddMeeting = async (
+    meetingData: Omit<Meeting, "id" | "status">
+  ) => {
     const newMeeting: Meeting = {
       ...meetingData,
-      id: '',
-      status: 'Expected'
+      id: "",
+      status: "Expected",
     };
-    addMeeting(newMeeting);
 
-    console.log(meetingData);
-    
-    fetch("http://localhost:3010/meetings",{
-      method:'POST',
-      body: JSON.stringify(
-        meetingData
-      ),
-      headers: {
-				"Content-Type": "application/json"
-      }
-    })
+    try {
+      await addMeeting(newMeeting);
+    } catch (error) {
+      console.error("Failed to add meeting", error);
+    }
 
     setShowForm(false);
+    updateMeetings();
     playAddSound();
   };
 
-  const handleEditMeeting = (meetingData: Omit<Meeting, 'id' | 'status'>) => {
+  const handleDeleteMeeting = async (id: string) => {
+    try {
+      await deleteMeeting(id);
+    } catch (error) {
+      console.error("Failed to delete meeting", error);
+    }
+    updateMeetings();
+    playMoveSound();
+  };
+
+  const handleEditMeeting = (meetingData: Omit<Meeting, "id" | "status">) => {
     if (!editingMeeting) return;
-    
+
     const updatedMeeting = {
       ...editingMeeting,
-      ...meetingData
+      ...meetingData,
     };
+
     updateMeeting(updatedMeeting);
     setEditingMeeting(undefined);
   };
 
-  const handleStatusChange = (id: string, newStatus: Meeting['status']) => {
+  const handleStatusChange = (id: string, newStatus: Meeting["status"]) => {
     updateMeetingStatus(id, newStatus);
     playMoveSound();
   };
-
-  const expectedMeetings = getTodayMeetings('Expected');
-  const waitingMeetings = getTodayMeetings('Waiting');
-  const inMeetingMeetings = getTodayMeetings('Running');
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -78,13 +112,15 @@ export default function TodayMeetings() {
       <div className="flex gap-6">
         {/* Expected Meetings - Full Height Column */}
         <div className="w-1/3 bg-white rounded-lg shadow-lg p-6 min-h-[calc(100vh-12rem)]">
-          <h3 className="text-lg font-medium mb-4 text-right">الاجتماعات المتوقعة اليوم</h3>
+          <h3 className="text-lg font-medium mb-4 text-right">
+            الاجتماعات المتوقعة اليوم
+          </h3>
           <div className="space-y-4">
-            {expectedMeetings.map(meeting => (
+            {meetings.expected.map((meeting) => (
               <MeetingCard
                 key={meeting.id}
                 meeting={meeting}
-                onDelete={deleteMeeting}
+                onDelete={handleDeleteMeeting}
                 onEdit={setEditingMeeting}
                 onStatusChange={handleStatusChange}
               />
@@ -95,13 +131,15 @@ export default function TodayMeetings() {
         {/* Two Column Layout for Waiting and In Meeting */}
         <div className="w-2/3 grid grid-cols-2 gap-6">
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-lg font-medium mb-4 text-right">في قائمة الانتظار</h3>
+            <h3 className="text-lg font-medium mb-4 text-right">
+              في قائمة الانتظار
+            </h3>
             <div className="space-y-4">
-              {waitingMeetings.map(meeting => (
+              {meetings.waiting.map((meeting) => (
                 <MeetingCard
                   key={meeting.id}
                   meeting={meeting}
-                  onDelete={deleteMeeting}
+                  onDelete={handleDeleteMeeting}
                   onEdit={setEditingMeeting}
                   onStatusChange={handleStatusChange}
                 />
@@ -110,13 +148,15 @@ export default function TodayMeetings() {
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-lg font-medium mb-4 text-right">في اجتماع مع المدير</h3>
+            <h3 className="text-lg font-medium mb-4 text-right">
+              في اجتماع مع المدير
+            </h3>
             <div className="space-y-4">
-              {inMeetingMeetings.map(meeting => (
+              {meetings.running.map((meeting) => (
                 <MeetingCard
                   key={meeting.id}
                   meeting={meeting}
-                  onDelete={deleteMeeting}
+                  onDelete={handleDeleteMeeting}
                   onEdit={setEditingMeeting}
                   onStatusChange={handleStatusChange}
                 />

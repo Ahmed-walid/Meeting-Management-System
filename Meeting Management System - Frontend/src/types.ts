@@ -17,5 +17,5 @@ export interface MeetingCardProps {
   meeting: Meeting;
   onDelete: (id: string) => void;
   onEdit: (meeting: Meeting) => void;
-  onStatusChange: (id: string, newStatus: Meeting['status']) => void;
+  onStatusChange: (oldMeeting: Meeting, newStatus: Meeting['status']) => void;
 }

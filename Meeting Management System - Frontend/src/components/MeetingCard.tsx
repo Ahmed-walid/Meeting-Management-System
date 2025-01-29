@@ -41,7 +41,7 @@ export function MeetingCard({
 							تعديل الاجتماع
 						</button>
 						<button
-							onClick={() => onStatusChange(meeting.id, "Waiting")}
+							onClick={() => onStatusChange(meeting, "Waiting")}
 							className="px-3 py-1 text-sm text-white bg-green-600 hover:bg-green-700 rounded-md"
 						>
 							حضر الآن
@@ -64,7 +64,7 @@ export function MeetingCard({
 							تعديل الاجتماع
 						</button>
 						<button
-							onClick={() => onStatusChange(meeting.id, "Running")}
+							onClick={() => onStatusChange(meeting, "Running")}
 							className="px-3 py-1 text-sm text-white bg-green-600 hover:bg-green-700 rounded-md"
 						>
 							سماح بالدخول
@@ -74,7 +74,7 @@ export function MeetingCard({
 			case "Running":
 				return (
 					<button
-						onClick={() => onStatusChange(meeting.id, "Completed")}
+						onClick={() => onStatusChange(meeting, "Completed")}
 						className="px-3 py-1 text-sm text-white bg-red-600 hover:bg-red-700 rounded-md"
 					>
 						إنهاء الاجتماع

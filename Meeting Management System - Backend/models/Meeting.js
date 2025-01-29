@@ -30,6 +30,10 @@ Meeting.init(
       type: DataTypes.ENUM('Running', 'Expected', 'Waiting', 'Completed', 'Canceled'),
       allowNull: false,
       defaultValue: 'Expected'
+    },
+    endTime: {
+      type: DataTypes.DATE,
+      allowNull: true
     }
   },
   {

@@ -28,14 +28,14 @@ export default function TodayMeetings() {
     addMeeting,
     updateMeeting,
     deleteMeeting,
-    updateMeetingStatus,
+    // updateMeetingStatus,
     getTodayMeetings,
-    loadMeetings,
+    loadTodayMeetings,
   } = useMeetingStore();
 
   useEffect(() => {
     const fetchMeetings = async () => {
-      await loadMeetings();
+      await loadTodayMeetings();
       updateMeetings();
     };
 
@@ -80,20 +80,46 @@ export default function TodayMeetings() {
     playMoveSound();
   };
 
-  const handleEditMeeting = (meetingData: Omit<Meeting, "id" | "status">) => {
+  const handleEditMeeting = async (
+    meetingData: Omit<Meeting, "id" | "status">
+  ) => {
     if (!editingMeeting) return;
+
+    if (new Date(meetingData.date) > new Date()) {
+      editingMeeting.status = "Expected";
+    }
 
     const updatedMeeting = {
       ...editingMeeting,
       ...meetingData,
     };
-
-    updateMeeting(updatedMeeting);
+    try {
+      await updateMeeting(updatedMeeting);
+    } catch (error) {
+      console.log("Failed to update meeting", error);
+    }
     setEditingMeeting(undefined);
+    updateMeetings();
   };
 
-  const handleStatusChange = (id: string, newStatus: Meeting["status"]) => {
-    updateMeetingStatus(id, newStatus);
+  const handleStatusChange = async (
+    oldMeeting: Meeting,
+    newStatus: Meeting["status"]
+  ) => {
+    // updateMeetingStatus(id, newStatus);
+
+    const newMeeting = {
+      ...oldMeeting,
+      status: newStatus,
+    };
+
+    try {
+      await updateMeeting(newMeeting);
+    } catch (error) {
+      console.log("Failed to update meeting", error);
+    }
+
+    updateMeetings();
     playMoveSound();
   };
 

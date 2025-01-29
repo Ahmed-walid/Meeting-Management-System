@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMeetingStore } from "../store/meetingStore";
 import { MeetingDetails } from "../components/MeetingDetails";
@@ -6,9 +6,27 @@ import type { Meeting } from "../types";
 
 export default function CompletedMeetings() {
 	const [selectedMeeting, setSelectedMeeting] = useState<Meeting | undefined>();
-	const { getPaginatedCompletedMeetings, setCurrentPage } = useMeetingStore();
+	const { getPaginatedCompletedMeetings, setCurrentPage, loadCompletedMeetings } = useMeetingStore();
 
-	const { meetings, totalPages, currentPage } = getPaginatedCompletedMeetings();
+	const [meetings, setMeetingsState] = useState<Meeting[]>([]);
+	const [totalPages, setTotalPagesState] = useState<number>(0);
+	const [currentPage, setCurrentPageState] = useState<number>(1);
+
+	useEffect(() => {
+	
+		const fetchMeetings = async ()=>{
+			
+			await loadCompletedMeetings();
+	
+			const { meetings, totalPages, currentPage } = getPaginatedCompletedMeetings();
+			setMeetingsState(meetings);
+			setTotalPagesState(totalPages);
+			setCurrentPageState(currentPage);
+		};
+
+		fetchMeetings();
+
+	},[currentPage, getPaginatedCompletedMeetings]);
 
 	const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 

@@ -7,6 +7,8 @@ const router = Router();
 
 const { Op, Sequelize } = require("sequelize");
 
+const ITEMS_PER_PAGE = 5;
+
 router.get("/today", async (req, res, next) => {
   const now = new Date();
   const tomorrow = new Date();
@@ -97,6 +99,25 @@ router.get("/scheduled", async (req, res, next) => {
 
 router.get("/completed", async (req, res, next) => {
   try {
+
+    const page = Number(req.query.page ?? 1);
+
+    if(page <= 0){
+        const error = new Error("invalid page");
+        error.code = 400;
+        throw error;
+    }
+
+    const offset = (page - 1) * ITEMS_PER_PAGE;
+
+    const totalCompletedMeetings = await Meeting.count({
+      where: {
+        status: "Completed",
+      },
+    });
+
+    const totalPages = Math.ceil(totalCompletedMeetings / ITEMS_PER_PAGE);
+
     let meetings = await Meeting.findAll({
       include: {
         model: Participant,
@@ -106,6 +127,8 @@ router.get("/completed", async (req, res, next) => {
         status: "Completed",
       },
       order: [["date", "ASC"]],
+      offset: offset,
+      limit: ITEMS_PER_PAGE,
     });
 
     meetings = meetings.map((meeting) => ({
@@ -118,8 +141,10 @@ router.get("/completed", async (req, res, next) => {
       return meeting;
     });
 
-    console.log(meetings);
-    res.json(meetings);
+    res.status(200).json({
+     totalPages: totalPages,
+      meetings: meetings,
+    });
   } catch (error) {
     console.error(error);
     const code = error.code ?? 500;

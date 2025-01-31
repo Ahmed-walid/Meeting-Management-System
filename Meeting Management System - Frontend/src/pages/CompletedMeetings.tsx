@@ -14,9 +14,9 @@ export default function CompletedMeetings() {
 
 	useEffect(() => {
 	
+		
 		const fetchMeetings = async ()=>{
-			
-			await loadCompletedMeetings();
+			await loadCompletedMeetings(getPaginatedCompletedMeetings().currentPage);
 	
 			const { meetings, totalPages, currentPage } = getPaginatedCompletedMeetings();
 			setMeetingsState(meetings);
@@ -28,7 +28,11 @@ export default function CompletedMeetings() {
 
 	},[currentPage, getPaginatedCompletedMeetings]);
 
-	const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+	const paginate = async (pageNumber: number) => {
+		await setCurrentPage(pageNumber);
+		setCurrentPageState(pageNumber);
+		setMeetingsState(getPaginatedCompletedMeetings().meetings);
+	}
 
 	return (
 		<div className="max-w-7xl mx-auto">

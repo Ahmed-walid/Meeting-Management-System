@@ -5,12 +5,13 @@ interface MeetingState {
   todayMeetings: Meeting[];
   completedMeetings: Meeting[];
   scheduledMeetings: Meeting[];
+  totalCompletedMeetingsPages: number;
   currentPage: number;
   itemsPerPage: number;
   addMeeting: (meeting: Meeting) => Promise<void>;
   updateMeeting: (meeting: Meeting) => Promise<void>;
   deleteMeeting: (id: string) => Promise<void>;
-  setCurrentPage: (page: number) => void;
+  setCurrentPage: (page: number) => Promise<void>;
   getTodayMeetings: (status: Meeting["status"]) => Meeting[];
   getScheduledMeetings: () => Meeting[];
   getPaginatedCompletedMeetings: () => {
@@ -20,7 +21,7 @@ interface MeetingState {
   };
   loadTodayMeetings: () => Promise<void>;
   loadScheduledMeetings: () => Promise<void>;
-  loadCompletedMeetings: () => Promise<void>;
+  loadCompletedMeetings: (page: number) => Promise<void>;
 }
 
 const isToday = (date: string) => {
@@ -58,6 +59,7 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
   scheduledMeetings: [],
   currentPage: 1,
   itemsPerPage: 5,
+  totalCompletedMeetingsPages: 0,
 
   loadTodayMeetings: async () => {
     try {
@@ -110,9 +112,9 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
     }
   },
 
-  loadCompletedMeetings: async () => {
+  loadCompletedMeetings: async (page: number) => {
     try {
-      const response = await fetch("http://localhost:3010/meetings/completed", {
+      const response = await fetch("http://localhost:3010/meetings/completed?page=" + page, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -124,11 +126,13 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
         return;
       }
 
-      const meetings = await response.json();
+      const data = await response.json();
+	  const meetings = data.meetings;
+
       console.log(meetings);
       console.log("Meetings are loaded");
 
-      return set({ completedMeetings:  sortMeetings(meetings) });
+      return set({ completedMeetings:  sortMeetings(meetings) , totalCompletedMeetingsPages: data.totalPages });
     } catch (error) {
       console.log("Failed to load meetings", error);
     }
@@ -251,7 +255,12 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
     }
   },
 
-  setCurrentPage: (page) => set({ currentPage: page }),
+  setCurrentPage: async (page) => {
+
+	await get().loadCompletedMeetings(page);
+
+	return set({ currentPage: page })
+  },
 
   getTodayMeetings: (status) => {
     return get().todayMeetings.filter((meeting) => meeting.status === status);
@@ -263,14 +272,9 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
 
   getPaginatedCompletedMeetings: () => {
     const state = get();
-    const completedMeetings = sortMeetings(state.completedMeetings);
-    const totalPages = Math.ceil(completedMeetings.length / state.itemsPerPage);
-    const start = (state.currentPage - 1) * state.itemsPerPage;
-    const end = start + state.itemsPerPage;
-
     return {
-      meetings: completedMeetings.slice(start, end),
-      totalPages,
+      meetings: sortMeetings(state.completedMeetings),
+      totalPages: state.totalCompletedMeetingsPages,
       currentPage: state.currentPage,
     };
   },

@@ -6,6 +6,7 @@ import { useMeetingSound } from "../hooks/useSound";
 import { useMeetingStore } from "../store/meetingStore";
 import type { Meeting } from "../types";
 import { useEffect } from "react";
+import { io } from "socket.io-client"; // Import the Socket.IO client
 
 export default function TodayMeetings() {
   type MeetingsState = {
@@ -28,7 +29,6 @@ export default function TodayMeetings() {
     addMeeting,
     updateMeeting,
     deleteMeeting,
-    // updateMeetingStatus,
     getTodayMeetings,
     loadTodayMeetings,
   } = useMeetingStore();
@@ -44,6 +44,13 @@ export default function TodayMeetings() {
   };
 
   useEffect(() => {
+    const socket = io("http://localhost:3010"); // Connect to the server
+
+    socket.on("update-meetings", () => {
+      console.log('server says: ' + 'update-meetings');
+      fetchMeetings();
+    });
+
     const fetchMeetings = async () => {
       await loadTodayMeetings();
       updateMeetings();
@@ -73,7 +80,7 @@ export default function TodayMeetings() {
       await addMeeting(newMeeting);
     } catch (error) {
       console.error("Failed to add meeting", error);
-      alert("خطأ في اضافةالاجتماع برجاء المحاولة بعد وقت لاحق"); 
+      alert("خطأ في اضافةالاجتماع برجاء المحاولة بعد وقت لاحق");
     }
 
     setShowForm(false);

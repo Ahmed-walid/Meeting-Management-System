@@ -169,7 +169,8 @@ export const useMeetingStore = create<MeetingState>((set, get) => ({
         }
       });
     } catch (error) {
-      console.log("Failed to add meeting", error);
+      console.log("Failed to add meeting", error);  
+      throw error;
     }
   },
 

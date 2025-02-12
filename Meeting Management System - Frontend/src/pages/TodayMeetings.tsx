@@ -33,6 +33,16 @@ export default function TodayMeetings() {
     loadTodayMeetings,
   } = useMeetingStore();
 
+  const inFuture = (date: string) => {
+    const today = new Date();
+    const meetingDate = new Date(date);
+    return (
+      meetingDate.getDate() > today.getDate() &&
+      meetingDate.getMonth() === today.getMonth() &&
+      meetingDate.getFullYear() === today.getFullYear()
+    );
+  };
+
   useEffect(() => {
     const fetchMeetings = async () => {
       await loadTodayMeetings();
@@ -63,6 +73,7 @@ export default function TodayMeetings() {
       await addMeeting(newMeeting);
     } catch (error) {
       console.error("Failed to add meeting", error);
+      alert("خطأ في اضافةالاجتماع برجاء المحاولة بعد وقت لاحق"); 
     }
 
     setShowForm(false);
@@ -85,8 +96,13 @@ export default function TodayMeetings() {
   ) => {
     if (!editingMeeting) return;
 
-    if (new Date(meetingData.date) > new Date()) {
-      editingMeeting.status = "Expected";
+    if (new Date(meetingData.date) >= new Date()) {
+      if (inFuture(meetingData.date)) {
+        editingMeeting.status = "Expected";
+      }
+    } else {
+      alert("لا يمكن تعديل اجتماع في الماضي");
+      return;
     }
 
     const updatedMeeting = {

@@ -47,7 +47,9 @@ export function MeetingForm({ meeting, onSubmit, onClose }: MeetingFormProps) {
 
     // TODO: Validate form data (PAST DATE, EMPTY FIELDS, ETC)
     const now = new Date();
+    now.setSeconds(0, 0);
     const meetingDate = new Date(formData.date);
+    meetingDate.setSeconds(0, 0);
     if (meetingDate < now) {
       alert("لا يمكن انشاء اجتماع في الماضي");
       return;
